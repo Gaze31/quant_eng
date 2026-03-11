@@ -1,0 +1,364 @@
+import pandas as pd
+import numpy as np
+import yfinance as yf
+import matplotlib.pyplot as plt
+from datetime import datetime, timedelta
+import time
+
+# ============================================
+# 1. DATA COLLECTION
+# ============================================
+def get_stock_data(ticker, years=2):
+    """
+    Download stock data from Yahoo Finance with error handling
+    """
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=365*years)
+    
+    print(f"Downloading {ticker} data from {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}...")
+    
+    try:
+        time.sleep(1)  # Small delay to avoid rate limiting
+        
+        data = yf.download(
+            ticker, 
+            start=start_date, 
+            end=end_date,
+            progress=True,
+            auto_adjust=False
+        )
+        
+        if data is None or data.empty:
+            print(f"No data retrieved for {ticker}")
+            return pd.DataFrame()
+        
+        print(f"Successfully downloaded {len(data)} days of data")
+        print(f"Date range: {data.index[0].strftime('%Y-%m-%d')} to {data.index[-1].strftime('%Y-%m-%d')}")
+        
+        return data
+        
+    except Exception as e:
+        print(f"Error downloading data: {e}")
+        return pd.DataFrame()
+
+# ============================================
+# 2. CALCULATE MOVING AVERAGES
+# ============================================
+def add_moving_averages(data, short_window=20, long_window=50):
+    """
+    Add Simple Moving Averages to the data
+    """
+    df = data.copy()
+    
+    # Calculate SMAs
+    df['SMA_short'] = df['Close'].rolling(window=short_window).mean()
+    df['SMA_long'] = df['Close'].rolling(window=long_window).mean()
+    
+    # Calculate EMAs
+    df['EMA_short'] = df['Close'].ewm(span=short_window, adjust=False).mean()
+    df['EMA_long'] = df['Close'].ewm(span=long_window, adjust=False).mean()
+    
+    return df
+
+# ============================================
+# 3. GENERATE TRADING SIGNALS
+# ============================================
+def generate_signals(data, use_sma=True):
+    """
+    Generate buy/sell signals based on MA crossover
+    """
+    df = data.copy()
+    
+    # Choose which MAs to use
+    if use_sma:
+        short_ma = 'SMA_short'
+        long_ma = 'SMA_long'
+    else:
+        short_ma = 'EMA_short'
+        long_ma = 'EMA_long'
+    
+    # Initialize signal column
+    df['Signal'] = 0
+    
+    # Generate signals
+    df.loc[df[short_ma] > df[long_ma], 'Signal'] = 1
+    df.loc[df[short_ma] < df[long_ma], 'Signal'] = -1
+    
+    # Identify crossover points
+    df['Crossover'] = df['Signal'].diff()
+    
+    # Classify crossovers
+    df['Trade_Signal'] = 'Hold'
+    df.loc[df['Crossover'] == 2, 'Trade_Signal'] = 'BUY'
+    df.loc[df['Crossover'] == -2, 'Trade_Signal'] = 'SELL'
+    
+    return df
+
+# ============================================
+# 4. BACKTEST THE STRATEGY
+# ============================================
+def backtest_strategy(data, initial_capital=10000):
+    """
+    Run backtest and calculate returns
+    """
+    df = data.copy()
+    
+    # Calculate daily returns
+    df['Daily_Return'] = df['Close'].pct_change()
+    
+    # Calculate strategy returns (shift signal to avoid look-ahead bias)
+    df['Strategy_Return'] = df['Signal'].shift(1) * df['Daily_Return']
+    
+    # Calculate cumulative returns
+    df['Market_Cumulative'] = (1 + df['Daily_Return']).cumprod()
+    df['Strategy_Cumulative'] = (1 + df['Strategy_Return']).cumprod()
+    
+    # Calculate portfolio value
+    df['Portfolio_Value'] = initial_capital * df['Strategy_Cumulative']
+    
+    return df
+
+# ============================================
+# 5. CALCULATE PERFORMANCE METRICS
+# ============================================
+def calculate_metrics(data):
+    """
+    Calculate key performance metrics
+    """
+    df = data.copy()
+    
+    # Remove NaN values
+    df_clean = df.dropna()
+    
+    if len(df_clean) == 0:
+        return {
+            'Strategy Return': 'N/A',
+            'Market Return': 'N/A',
+            'Excess Return': 'N/A',
+            'Annualized Return': 'N/A',
+            'Sharpe Ratio': 'N/A',
+            'Max Drawdown': 'N/A',
+            'Total Trades': 0,
+            'Buy Signals': 0,
+            'Sell Signals': 0
+        }
+    
+    # Total returns
+    strategy_return = df_clean['Strategy_Cumulative'].iloc[-1] - 1
+    market_return = df_clean['Market_Cumulative'].iloc[-1] - 1
+    
+    # Annualized return
+    days = len(df_clean)
+    strategy_annual = (1 + strategy_return) ** (252/days) - 1
+    
+    # Sharpe ratio
+    strategy_daily_returns = df_clean['Strategy_Return'].dropna()
+    if len(strategy_daily_returns) > 0 and strategy_daily_returns.std() > 0:
+        sharpe = np.sqrt(252) * strategy_daily_returns.mean() / strategy_daily_returns.std()
+    else:
+        sharpe = 0
+    
+    # Maximum drawdown
+    cumulative = df_clean['Strategy_Cumulative']
+    rolling_max = cumulative.expanding().max()
+    drawdown = (cumulative - rolling_max) / rolling_max
+    max_drawdown = drawdown.min()
+    
+    # Trade statistics
+    trades = df[df['Trade_Signal'] != 'Hold']
+    buy_trades = trades[trades['Trade_Signal'] == 'BUY']
+    sell_trades = trades[trades['Trade_Signal'] == 'SELL']
+    
+    metrics = {
+        'Strategy Return': f'{strategy_return:.2%}',
+        'Market Return': f'{market_return:.2%}',
+        'Excess Return': f'{(strategy_return - market_return):.2%}',
+        'Annualized Return': f'{strategy_annual:.2%}',
+        'Sharpe Ratio': f'{sharpe:.2f}',
+        'Max Drawdown': f'{max_drawdown:.2%}',
+        'Total Trades': len(buy_trades) + len(sell_trades),
+        'Buy Signals': len(buy_trades),
+        'Sell Signals': len(sell_trades)
+    }
+    
+    return metrics
+
+# ============================================
+# 6. PRINT TRADE LOG (FIXED VERSION)
+# ============================================
+def print_trade_log(data):
+    """
+    Print all trades with dates and prices using itertuples
+    """
+    trades = data[data['Trade_Signal'] != 'Hold'].copy()
+    
+    if len(trades) == 0:
+        print("\nNo trades generated during this period")
+        return
+    
+    print("\n" + "="*70)
+    print("TRADE LOG")
+    print("="*70)
+    print(f"{'Date':12} | {'Signal':6} | {'Price':8} | {'Type':18}")
+    print("-"*70)
+    
+    # Use itertuples for clean scalar values
+    for row in trades.itertuples():
+        date = row.Index.strftime('%Y-%m-%d')
+        signal = row.Trade_Signal
+        price = row.Close
+        crossover_value = row.Crossover
+        
+        # Determine crossover type
+        if crossover_value == 2:
+            crossover_type = "Bullish Crossover"
+        elif crossover_value == -2:
+            crossover_type = "Bearish Crossover"
+        else:
+            crossover_type = "Signal Change"
+        
+        print(f"{date} | {signal:6} | ${price:7.2f} | {crossover_type}")
+    
+    print("="*70)
+
+# ============================================
+# 7. VISUALIZE RESULTS
+# ============================================
+def plot_results(data, ticker, short_window, long_window):
+    """
+    Create visualizations
+    """
+    fig, axes = plt.subplots(3, 1, figsize=(14, 12))
+    fig.suptitle(f'{ticker} - MA Crossover Strategy ({short_window}/{long_window})', 
+                 fontsize=14, fontweight='bold')
+    
+    # Plot 1: Price and Moving Averages
+    ax1 = axes[0]
+    ax1.plot(data.index, data['Close'], label='Close Price', color='black', linewidth=1)
+    ax1.plot(data.index, data['SMA_short'], label=f'SMA {short_window}', color='blue', linestyle='--')
+    ax1.plot(data.index, data['SMA_long'], label=f'SMA {long_window}', color='red', linestyle='--')
+    
+    # Mark buy/sell signals
+    buy_signals = data[data['Trade_Signal'] == 'BUY']
+    sell_signals = data[data['Trade_Signal'] == 'SELL']
+    
+    if len(buy_signals) > 0:
+        ax1.scatter(buy_signals.index, buy_signals['Close'], 
+                   color='green', marker='^', s=100, label='BUY', zorder=5)
+    if len(sell_signals) > 0:
+        ax1.scatter(sell_signals.index, sell_signals['Close'], 
+                   color='red', marker='v', s=100, label='SELL', zorder=5)
+    
+    ax1.set_ylabel('Price ($)')
+    ax1.legend(loc='upper left')
+    ax1.grid(True, alpha=0.3)
+    ax1.set_title('Price Action & Trading Signals')
+    
+    # Plot 2: Cumulative Returns
+    ax2 = axes[1]
+    ax2.plot(data.index, data['Market_Cumulative'], 
+             label='Buy & Hold', color='gray', linestyle='--')
+    ax2.plot(data.index, data['Strategy_Cumulative'], 
+             label='MA Strategy', color='purple', linewidth=2)
+    ax2.set_ylabel('Cumulative Returns')
+    ax2.legend(loc='upper left')
+    ax2.grid(True, alpha=0.3)
+    ax2.set_title('Strategy vs Buy & Hold Returns')
+    
+    # Plot 3: Portfolio Value
+    ax3 = axes[2]
+    ax3.plot(data.index, data['Portfolio_Value'], 
+             label='Portfolio Value', color='green', linewidth=2)
+    
+    # Color code profit/loss regions
+    ax3.fill_between(data.index, 10000, data['Portfolio_Value'], 
+                     where=(data['Portfolio_Value'] >= 10000), 
+                     color='green', alpha=0.3, label='Profit')
+    ax3.fill_between(data.index, 10000, data['Portfolio_Value'], 
+                     where=(data['Portfolio_Value'] < 10000), 
+                     color='red', alpha=0.3, label='Loss')
+    
+    ax3.axhline(y=10000, color='black', linestyle='-', linewidth=0.5)
+    ax3.set_ylabel('Portfolio Value ($)')
+    ax3.set_xlabel('Date')
+    ax3.legend(loc='upper left')
+    ax3.grid(True, alpha=0.3)
+    ax3.set_title('Portfolio Value Over Time')
+    
+    plt.tight_layout()
+    plt.show()
+
+# ============================================
+# 8. MAIN EXECUTION
+# ============================================
+def main():
+    # Configuration
+    TICKER = 'AAPL'
+    YEARS = 2
+    SHORT_MA = 20
+    LONG_MA = 50
+    INITIAL_CAPITAL = 10000
+    
+    print("="*60)
+    print("MOVING AVERAGE CROSSOVER STRATEGY")
+    print("="*60)
+    print(f"Ticker: {TICKER}")
+    print(f"Period: {SHORT_MA}/{LONG_MA} MA")
+    print(f"Data: {YEARS} years")
+    print(f"Initial Capital: ${INITIAL_CAPITAL:,.0f}")
+    print("="*60)
+    
+    # Step 1: Get data
+    data = get_stock_data(TICKER, YEARS)
+    
+    if data is None or data.empty:
+        print("\nError: Could not download data.")
+        return
+    
+    print(f"\nData shape: {data.shape}")
+    print(f"Columns: {list(data.columns)}")
+    
+    # Step 2: Add moving averages
+    data = add_moving_averages(data, SHORT_MA, LONG_MA)
+    
+    # Step 3: Generate signals
+    data = generate_signals(data, use_sma=True)
+    
+    # Step 4: Run backtest
+    data = backtest_strategy(data, INITIAL_CAPITAL)
+    
+    # Step 5: Calculate metrics
+    metrics = calculate_metrics(data)
+    
+    # Step 6: Print results
+    print("\n" + "="*60)
+    print("PERFORMANCE METRICS")
+    print("="*60)
+    for key, value in metrics.items():
+        print(f"{key:20}: {value}")
+    
+    # Step 7: Print trade log
+    print_trade_log(data)
+    
+    # Step 8: Plot results
+    try:
+        plot_results(data, TICKER, SHORT_MA, LONG_MA)
+    except Exception as e:
+        print(f"\nError plotting results: {e}")
+    
+    # Step 9: Final portfolio value
+    final_value = data['Portfolio_Value'].iloc[-1]
+    total_return = (final_value - INITIAL_CAPITAL) / INITIAL_CAPITAL
+    
+    print("\n" + "="*60)
+    print("SUMMARY")
+    print("="*60)
+    print(f"Initial Investment: ${INITIAL_CAPITAL:,.2f}")
+    print(f"Final Portfolio: ${final_value:,.2f}")
+    print(f"Total Profit/Loss: ${final_value - INITIAL_CAPITAL:,.2f}")
+    print(f"Total Return: {total_return:.2%}")
+    print("="*60)
+
+# Run the program
+if __name__ == "__main__":
+    main()
