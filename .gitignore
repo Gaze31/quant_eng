@@ -12,3 +12,4 @@ tf_env/
 venv/
 __pycache__/
 *.pyc
+tf_venv/
