@@ -8,3 +8,7 @@ dist/
 build/
 .ipynb_checkpoints/
 .DS_Store
+tf_env/
+venv/
+__pycache__/
+*.pyc
