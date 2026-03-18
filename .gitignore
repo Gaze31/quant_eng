@@ -13,3 +13,12 @@ venv/
 __pycache__/
 *.pyc
 tf_venv/
+*.pkl
+*.pt
+*.safetensors
+best_finbert_model/
+FinancialPhraseBank/
+financial_phrasebank.csv
+Sentences_*.txt
+*.zip
+data.zip
