@@ -117,6 +117,83 @@ scikit-learn>=1.3.0
 - [ ] Add Sharpe-optimized position sizing
 - [ ] Test on Indian equity markets (NSE data via yfinance)
 
+## Credit Risk Neural Network
+
+A feedforward neural network for predicting loan default probability, benchmarked against a Logistic Regression baseline. Trained on 32,574 real loan records with 14 engineered features.
+
+---
+
+### Architecture
+
+```
+Input (14 features)
+    → Dense(64) + BatchNorm + ReLU + Dropout(0.3)
+    → Dense(32) + BatchNorm + ReLU + Dropout(0.3)
+    → Dense(16) + ReLU
+    → Dense(1) + Sigmoid
+Output: default probability (0 to 1)
+```
+
+---
+
+### Dataset
+
+- **Source:** Credit Risk Dataset (Kaggle)
+- **Samples:** 32,574 (after cleaning)
+- **Default rate:** 21.82% (class imbalance handled with weighted loss)
+- **Features:** age, income, employment length, loan amount, interest rate, loan grade, home ownership, loan intent, debt-to-income ratio + 3 engineered features
+
+---
+
+### Results
+
+| Model | AUC-ROC | Avg Precision | Accuracy |
+|---|---|---|---|
+| Logistic Regression | 0.8496 | 0.6848 | 79% |
+| Neural Network | **0.8973** | **0.8307** | **90%** |
+| **AUC Improvement** | **+5.61%** | **+21.3%** | — |
+
+![Credit Risk Results](results/credit_risk_results.png)
+
+---
+
+### Key Findings
+
+**1. Neural network meaningfully outperforms baseline**
+AUC improved from 0.850 to 0.897 — a +5.61% gain. In credit risk, where model outputs directly affect lending decisions, this magnitude of improvement is operationally significant.
+
+**2. Average Precision jump is the more important number**
+Avg Precision improved from 0.685 to 0.831 — a +21.3% improvement. This matters more than AUC in imbalanced datasets because it measures precision across all recall thresholds, penalizing false positives heavily. A lender cares more about not approving bad loans than catching every good one.
+
+**3. Default class precision: 0.93**
+The model correctly identifies 93% of predicted defaults as actual defaults. Low false positive rate means fewer good borrowers wrongly rejected.
+
+**4. Default class recall: 0.61**
+The model misses 39% of actual defaults. This is the key tradeoff — the model is conservative, only flagging high-confidence defaults. Adjusting the classification threshold from 0.5 downward would improve recall at the cost of precision.
+
+**5. Training converged cleanly**
+No overfitting observed — validation loss decreased steadily across all 50 epochs, and validation AUC improved from 0.855 at epoch 1 to 0.908 at epoch 50.
+
+---
+
+### Setup
+
+```bash
+pip install torch scikit-learn pandas numpy matplotlib
+python credit_risk_dl.py
+```
+
+Runs in approximately 5 minutes on CPU (MPS accelerated on Apple Silicon).
+
+---
+
+### Known Limitations
+
+- Dataset is synthetic/public — not validated on real bank loan data
+- No temporal validation — loans from different time periods may have different risk profiles
+- Threshold of 0.5 is arbitrary — optimal threshold depends on the cost ratio of false positives vs false negatives in the specific lending context
+- Model does not account for macroeconomic regime — trained in one market environment, may degrade in recession
+
 ---
 
 ## Author
