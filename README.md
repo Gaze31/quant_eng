@@ -196,6 +196,18 @@ Runs in approximately 5 minutes on CPU (MPS accelerated on Apple Silicon).
 
 ---
 
+Random Forest Strategy — Walk-Forward Validation
+A proper out-of-sample validation of ML-based trading on AAPL (2018–2024). Built to address the overfitting problem identified in the original Random Forest strategy.
+Methodology: 24-month rolling train window, 3-month test window, 18 folds. Zero data leakage. 46 features including RSI, MACD, Bollinger Bands, ATR, volume ratios, lagged returns, and calendar effects.
+Results:
+MetricValueMean Accuracy0.492 ± 0.062Mean AUC-ROC0.496 ± 0.064Total Return-6.60%Sharpe Ratio-4.549Win Rate42.06%
+
+Key Finding: Walk-forward accuracy of 49.2% is indistinguishable from random. This directly contradicts the original in-sample ML result of 959% return — confirming it was overfitted. Technical indicators alone carry no predictive signal for next-day AAPL direction across 4 years of out-of-sample data.
+
+Top feature by importance: overnight_gap — the gap between previous close and today's open. Despite being the most informative feature, it still cannot produce above-random accuracy out-of-sample.
+
+Conclusion: Efficient market hypothesis holds for large-cap short-term prediction with standard technical features. Alpha requires either longer holding periods, alternative data sources, or fundamentally different signal construction.
+
 ## Author
 
 **Sumedha Hundekar** — Finance graduate building quantitative trading systems in Python.  
