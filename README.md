@@ -208,6 +208,56 @@ Top feature by importance: overnight_gap — the gap between previous close and 
 
 Conclusion: Efficient market hypothesis holds for large-cap short-term prediction with standard technical features. Alpha requires either longer holding periods, alternative data sources, or fundamentally different signal construction.
 
+# Stock Movement Classifier — XGBoost
+
+Predicts next-day direction (up/down) for AAPL using walk-forward validation.
+
+## What this project does differently
+- No data leakage — uses walk-forward validation, not random train/test split
+- Engineered features from returns and volume, not raw prices
+- Honest evaluation — F1 score, not accuracy
+
+## Results
+| Fold | F1 | Precision | Recall |
+|------|----|-----------|--------|
+| 1 | 0.495 | 0.486 | 0.505 |
+| 2 | 0.476 | 0.462 | 0.491 |
+| 3 | 0.523 | 0.528 | 0.518 |
+| 4 | 0.559 | 0.547 | 0.571 |
+| 5 | 0.647 | 0.610 | 0.688 |
+| **Mean** | **0.540** | **0.526** | **0.555** |
+
+## Key finding
+`volume_ratio` ranked #1 in both frequency and gain — volume precedes price movement,
+consistent with institutional accumulation patterns before retail reaction.
+
+## Setup
+```bash
+git clone https://github.com/YOUR_USERNAME/stock_xgb
+cd stock_xgb
+pip install -r requirements.txt
+python stock_xgb.py
+```
+
+## Features engineered
+- Returns: 1d, 5d, 10d
+- Volatility: 10d, 20d rolling std
+- MA ratio: 5d/20d crossover signal
+- RSI: 14-period
+- Volume ratio: vs 20d average
+
+## Model Comparison
+
+| Model | Mean F1 | Notes |
+|-------|---------|-------|
+| XGBoost | 0.540 | Best on volatile regimes (Fold 1) |
+| Random Forest | 0.541 | Consistent on trending markets |
+| Bagging | 0.553 | Best mean F1, weakest on shocks |
+
+**Finding:** No single model dominates. XGBoost shows stronger
+resilience during market shocks (COVID crash period).
+Bagging edges ahead on stable trending data.
+
 ## Author
 
 **Sumedha Hundekar** — Finance graduate building quantitative trading systems in Python.  
