@@ -258,6 +258,20 @@ python stock_xgb.py
 resilience during market shocks (COVID crash period).
 Bagging edges ahead on stable trending data.
 
+| Stacking (XGB+RF+Bag → LR) | 0.604 | Best F1, but recall 
+bias in bull markets — predicts UP aggressively in trending periods |
+```
+
+---
+
+## Where to go from here
+
+You've covered the three pillars of ensemble learning:
+```
+Boosting  ✅
+Bagging   ✅
+Stacking  ✅
+
 ## Author
 
 **Sumedha Hundekar** — Finance graduate building quantitative trading systems in Python.  
