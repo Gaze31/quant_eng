@@ -272,6 +272,71 @@ Boosting  ✅
 Bagging   ✅
 Stacking  ✅
 
+# Optuna Quant Alpha Model
+
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Optuna](https://img.shields.io/badge/Optuna-3.0+-green.svg)](https://optuna.org/)
+[![XGBoost](https://img.shields.io/badge/XGBoost-1.5+-orange.svg)](https://xgboost.ai/)
+[![License](https://img.shields.io/badge/license-MIT-red.svg)](LICENSE)
+
+A sophisticated quantitative finance alpha model that uses XGBoost with Optuna hyperparameter optimization to predict asset returns. The model implements walk-forward cross-validation with embargo periods to prevent look-ahead bias and generates synthetic market data with realistic factor structures.
+
+## 📊 Key Features
+
+- **Synthetic Market Data Generation**: Realistic equity return simulation with latent factor structure and idiosyncratic noise
+- **Rich Feature Engineering**: 24 features including momentum, volatility, skewness, mean reversion, and cross-sectional signals
+- **Walk-Forward Validation**: Time-series cross-validation with embargo periods to prevent look-ahead bias
+- **Bayesian Hyperparameter Optimization**: Optuna with TPE sampler and Median pruning for efficient tuning
+- **Comprehensive Performance Metrics**: Sharpe ratio, information coefficient, max drawdown, hit rate, and rank IC
+- **Beautiful Visualizations**: 6-panel dashboard with optimization history, feature importance, and equity curves
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+```bash
+Python 3.8 or higher
+
+optuna-quant-alpha/
+├── optuna_quant_project.py    # Main script
+├── requirements.txt           # Python dependencies
+├── README.md                  # This file
+├── LICENSE                    # MIT License
+└── optuna_results/            # Generated visualizations
+    └── optuna_quant_results_*.png
+
+============================================================
+  OPTUNA QUANT ALPHA MODEL  —  Full Pipeline
+============================================================
+
+[1/5] Generating synthetic market data...
+      1500 trading days | 50 assets
+[2/5] Engineering features...
+      Feature matrix: (1436, 24)  |  Target: (1436,)
+[3/5] Running Optuna optimization...
+[4/5] Optimization complete.
+
+  ╔══════════════════════════════════════╗
+  ║  BEST TRIAL RESULTS                  ║
+  ╠══════════════════════════════════════╣
+  ║  Trial #    : 0                       ║
+  ║  Sharpe     : 0.7538                  ║
+  ╠══════════════════════════════════════╣
+  ║  BEST HYPERPARAMETERS                ║
+  ╠══════════════════════════════════════╣
+  ║  n_estimators      : 218               ║
+  ║  max_depth         : 8                 ║
+  ║  learning_rate     : 0.10013           ║
+  ╚══════════════════════════════════════╝
+
+[5/5] Final out-of-sample evaluation...
+
+  OOS Sharpe     : 0.7450
+  OOS Max DD     : -24.86%
+  OOS Total Ret  : 15.14%
+  OOS Hit Rate   : 54.2%
+  OOS Rank IC    : 0.0000
+
 ## Author
 
 **Sumedha Hundekar** — Finance graduate building quantitative trading systems in Python.  
