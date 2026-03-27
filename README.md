@@ -337,6 +337,20 @@ optuna-quant-alpha/
   OOS Hit Rate   : 54.2%
   OOS Rank IC    : 0.0000
 
+# Feature Extraction Comparison for Handwritten Digit Recognition
+
+This project demonstrates the impact of different feature extraction techniques on classification performance using the Digits dataset (8×8 images of handwritten digits). It compares:
+
+- **Raw pixels** (flattened 64-dimensional vectors)
+- **Histogram of Oriented Gradients (HOG)** – captures edge and shape information
+- **Local Binary Patterns (LBP)** – captures local texture patterns
+
+The extracted features are used to train a Support Vector Machine (SVM) classifier, and the accuracy of each approach is compared.
+
+## 📁 Project Structure
+
+This README is straightforward and suitable for a GitHub repository. You can adjust the repository name and your username accordingly.
+
 ## Author
 
 **Sumedha Hundekar** — Finance graduate building quantitative trading systems in Python.  
