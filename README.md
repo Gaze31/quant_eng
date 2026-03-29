@@ -347,11 +347,11 @@ This project demonstrates the impact of different feature extraction techniques 
 
 The extracted features are used to train a Support Vector Machine (SVM) classifier, and the accuracy of each approach is compared.
 
-## 📁 Project Structure
+📁 Project Structure
 
 This README is straightforward and suitable for a GitHub repository. You can adjust the repository name and your username accordingly.
 
-# PCA vs t‑SNE: Dimensionality Reduction for Visualization
+PCA vs t‑SNE: Dimensionality Reduction for Visualization
 
 This project demonstrates two popular dimensionality reduction techniques – **PCA** (Principal Component Analysis) and **t‑SNE** (t‑Distributed Stochastic Neighbor Embedding) – applied to the Iris dataset. The results are visualized in 2D, highlighting the strengths of each method.
 
