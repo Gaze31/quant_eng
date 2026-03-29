@@ -351,6 +351,31 @@ The extracted features are used to train a Support Vector Machine (SVM) classifi
 
 This README is straightforward and suitable for a GitHub repository. You can adjust the repository name and your username accordingly.
 
+# PCA vs t‑SNE: Dimensionality Reduction for Visualization
+
+This project demonstrates two popular dimensionality reduction techniques – **PCA** (Principal Component Analysis) and **t‑SNE** (t‑Distributed Stochastic Neighbor Embedding) – applied to the Iris dataset. The results are visualized in 2D, highlighting the strengths of each method.
+
+## 📊 Overview
+
+- **PCA**: Linear, fast, preserves global variance.  
+- **t‑SNE**: Non‑linear, excels at revealing local clusters (stochastic).  
+
+The code:
+1. Loads and standardizes the Iris dataset.
+2. Reduces features to 2 dimensions using PCA and t‑SNE.
+3. Plots both embeddings side‑by‑side with species‑colored points.
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Python 3.7+
+- Required packages: `numpy`, `pandas`, `matplotlib`, `seaborn`, `scikit‑learn`
+
+### Installation
+```bash
+git clone https://github.com/yourusername/pca-tsne-iris.git
+cd pca-tsne-iris
+pip install -r requirements.txt   # (optional: create a requirements.txt)
 ## Author
 
 **Sumedha Hundekar** — Finance graduate building quantitative trading systems in Python.  
