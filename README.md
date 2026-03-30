@@ -376,6 +376,26 @@ The code:
 git clone https://github.com/yourusername/pca-tsne-iris.git
 cd pca-tsne-iris
 pip install -r requirements.txt   # (optional: create a requirements.txt)
+
+# Fraud Detection for Quantitative Finance
+
+A machine learning pipeline to detect fraudulent credit card transactions, with imbalanced data handling, cost-sensitive evaluation, and SHAP explainability.
+
+## Features
+
+- **Data preprocessing** – scales `Amount` and `Time`
+- **Imbalance handling** – SMOTE oversampling
+- **Models** – Logistic Regression, Random Forest, XGBoost
+- **Evaluation** – ROC‑AUC, Precision‑Recall, confusion matrix, custom cost analysis
+- **Explainability** – SHAP summary and force plots
+
+## Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/fraud-detection.git
+   cd fraud-detection
+
 ## Author
 
 **Sumedha Hundekar** — Finance graduate building quantitative trading systems in Python.  
